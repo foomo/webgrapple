@@ -3,16 +3,22 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/foomo/webgrapple/server"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 var (
 	// Used for flags.
+	logger  *zap.Logger
 	cfgFile string
 
-	flagPort = ":80"
+	flagPort           = ":80"
+	flagCert           = ""
+	flagKey            = ""
+	flagServiceAddress = server.DefaultServiceAddress
 
 	rootCmd = &cobra.Command{
 		Use:   "webgrapple",
@@ -26,6 +32,8 @@ func Execute() error {
 }
 
 func init() {
+	logger, _ = zap.NewProduction()
+	defer logger.Sync()
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")

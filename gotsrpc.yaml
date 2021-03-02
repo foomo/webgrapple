@@ -1,0 +1,9 @@
+---
+targets:
+  service:
+    services:
+      /___webgrapple-service: Service
+    package: github.com/foomo/webgrapple/server
+    tsrpc:
+      - Service
+...
