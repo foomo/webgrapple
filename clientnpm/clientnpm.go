@@ -18,22 +18,56 @@ import (
 	"go.uber.org/zap"
 )
 
+func getConfig(logger *zap.Logger, path, servicePath string, serviceMimeTypes []string) (config vo.MultiServerClientConfig, err error) {
+	configPath := filepath.Join(path, "webgrapple.yaml")
+	logger.Info("checking for configuration",
+		zap.String("config-path", configPath),
+	)
+	// is there a config
+	info, errStat := os.Stat(configPath)
+	configExists := errStat == nil && !info.IsDir()
+	if configExists {
+		logger.Info("reading configuration")
+		// read config
+		multiServerConfig, errConfig := clientconfig.ReadConfig(configPath)
+		if errConfig != nil {
+			return nil, errors.Wrap(errConfig, "could not read config from file")
+		}
+		return multiServerConfig, nil
+	}
+	logger.Info("no config file found, creating config from",
+		zap.String("service-path", servicePath),
+		zap.Strings("service-mimetypes", serviceMimeTypes),
+	)
+	return vo.MultiServerClientConfig{
+		server.DefaultServiceURL: vo.ClientConfig{
+			&vo.Service{
+				ID:        vo.ServiceID("npm-service-" + filepath.Base(path)),
+				Path:      servicePath,
+				MimeTypes: serviceMimeTypes,
+			},
+		},
+	}, nil
+}
+
 func Run(
 	logger *zap.Logger,
 	debugServer, startVSCode bool,
+	servicePath string, serviceMimeTypes []string,
 	path string,
 	npmCmd string, npmArgs ...string,
 ) error {
 
 	// setup vars
 	name := filepath.Base(path)
-	configPath := filepath.Join(path, "webgrapple.yaml")
-	logger.Info("starting devproxy client for", zap.String("path", path), zap.String("name", path), zap.String("configPath", configPath))
-
-	// read config
-	multiServerConfig, errConfig := clientconfig.ReadConfig(configPath)
-	if errConfig != nil {
-		return errors.Wrap(errConfig, "could not read config from file")
+	logger.Info(
+		"starting devproxy client for",
+		zap.String("path", path),
+		zap.String("name", path),
+	)
+	multiServerConfig, errGetConfig := getConfig(logger, path, servicePath, serviceMimeTypes)
+	if errGetConfig != nil {
+		return errors.Wrap(errGetConfig, "failed to ge config")
 	}
 
 	// get some ports

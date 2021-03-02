@@ -48,11 +48,16 @@ func newRegistry(logger *zap.Logger) *registry {
 	}
 }
 
-func (r *registry) upsert(services []*vo.Service) (err error) {
+func (r *registry) getServicesCopy() serviceMap {
 	copy := serviceMap{}
 	if r.state != nil {
 		copy = r.state.services.cp()
 	}
+	return copy
+}
+
+func (r *registry) upsert(services []*vo.Service) (err error) {
+	copy := r.getServicesCopy()
 	for _, service := range services {
 		r.logger.Info("upserting service", zap.String("id", string(service.ID)), zap.String("path", service.Path), zap.String("backendAddress", service.BackendAddress))
 		copy[service.ID] = service
@@ -61,7 +66,7 @@ func (r *registry) upsert(services []*vo.Service) (err error) {
 }
 
 func (r *registry) remove(ids []vo.ServiceID) (err error) {
-	copy := r.state.services.cp()
+	copy := r.getServicesCopy()
 	for _, id := range ids {
 		_, found := copy[id]
 		if !found {
