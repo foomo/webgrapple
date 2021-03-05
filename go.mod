@@ -3,7 +3,6 @@ module github.com/foomo/webgrapple
 go 1.15
 
 require (
-	github.com/davecgh/go-spew v1.1.1
 	github.com/foomo/gotsrpc v0.0.0-20210212151821-c4dd132ff1b9
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.1.3
