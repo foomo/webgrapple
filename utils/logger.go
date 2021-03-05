@@ -11,15 +11,18 @@ import (
 var logger *zap.Logger
 
 func init() {
+	var config zap.Config
 	if os.Getenv("LOG_FORMAT") == "json" {
-		logger, _ = zap.NewProduction()
+		config = zap.NewProductionConfig()
+		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	} else {
-		config := zap.NewDevelopmentConfig()
+		config = zap.NewDevelopmentConfig()
 		config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-		config.EncoderConfig.EncodeCaller = nil
 		config.EncoderConfig.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {}
-		logger, _ = config.Build()
 	}
+	config.DisableStacktrace = true
+	config.DisableCaller = true
+	logger, _ = config.Build()
 	defer logger.Sync()
 }
 
