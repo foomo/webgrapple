@@ -2,11 +2,11 @@ package server
 
 import (
 	"errors"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -69,6 +69,19 @@ func extractDataFromURLStrings(urlStrings []string) (hosts []hostName, urls []*u
 	return hosts, urls, nil
 }
 
+func filesExist(files ...string) (bool, error) {
+	for _, f := range files {
+		existsAndIsFile, err := fileExistsAndIsAFile(filepath.Base(f), f)
+		if err != nil {
+			return false, err
+		}
+		if !existsAndIsFile {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
 func ensureCertAndKey(
 	logger *zap.Logger,
 	commonNames []hostName,
@@ -93,19 +106,20 @@ func ensureCertAndKey(
 			return certFile, keyFile, errors.New("there is a key file but no cert, giving up")
 		}
 	} else {
-		logger.Info("no key and cert given, generating temporary ones")
-		certFilePointer, errTempFile := ioutil.TempFile("", "cert-")
-		if errTempFile != nil {
-			return certFile, keyFile, errTempFile
+		certNameBase := "webgrapple-temp"
+		for _, commonName := range commonNames {
+			certNameBase += "-" + string(commonName)
 		}
-		certFile = certFilePointer.Name()
-		keyFilePointer, errKeyFile := ioutil.TempFile("", "key-")
-		if errKeyFile != nil {
-			return certFile, keyFile, errKeyFile
+		tempDir := os.TempDir()
+		certFile = filepath.Join(tempDir, "cert-"+certNameBase+".pem")
+		keyFile = filepath.Join(tempDir, "key-"+certNameBase+".pem")
+		logger.Info("no key or cert given - will try temporary files", zap.String("cert", certFile), zap.String("key", keyFile))
+		certAndKeyExist, errFilesExist := filesExist(certFile, keyFile)
+		if errFilesExist != nil {
+			return certFile, keyFile, errFilesExist
 		}
-		keyFile = keyFilePointer.Name()
-		logger.Info("and the temorary files are", zap.String("cert", certFile), zap.String("key", keyFile))
-		defer logger.Info("cleaning up generated key and cert files", zap.Error(os.Remove(keyFile)), zap.Error(os.Remove(certFile)))
+		certExists = certAndKeyExist
+		keyExists = certAndKeyExist
 	}
 
 	if !certExists && !keyExists {
