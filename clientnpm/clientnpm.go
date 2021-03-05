@@ -64,7 +64,7 @@ func Run(
 	)
 	config, errGetConfig := getConfig(logger, path)
 	if errGetConfig != nil {
-		return errorWrap(errGetConfig, "failed to ge config")
+		return errorWrap(errGetConfig, "failed to get config webgrapple.yaml is missing ?!")
 	}
 
 	// get some ports
