@@ -3,20 +3,26 @@ package clientnpm
 import (
 	"os"
 
+	"github.com/foomo/webgrapple/server"
 	"github.com/foomo/webgrapple/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
 
 var (
-	flagServiceMimetypes = []string{}
-	flagServicePath      = ""
-	flagNPMDebug         = false
-	flagStartVSCode      = true
-	Command              = &cobra.Command{
+	flagDebugServerPort = 0
+	flagStartVSCode     = false
+	flagReverseProxyURL = server.DefaultServiceURL
+	flagPort            = 0
+	// Command use this for NPM support, when composing your own webgrapple
+	Command = &cobra.Command{
 		Use:   "client-npm",
-		Short: "client to hook up a npm server",
-		Long:  `long client ....`,
+		Short: "client to hook up a npm / Node.js server",
+		Long: `allows you to webgrapple a Node.js server and has debugging support for vscode
+
+- client-npm assumes that your Node.js server will respond on http://127.0.0.1:<flagPort>
+
+		`,
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := utils.GetLogger()
 			wd, errWd := os.Getwd()
@@ -33,8 +39,9 @@ var (
 				npmArgs = args[1:]
 			}
 			errRun := Run(
-				logger, flagNPMDebug, flagStartVSCode,
-				flagServicePath, flagServiceMimetypes,
+				logger,
+				flagReverseProxyURL,
+				flagPort, flagDebugServerPort, flagStartVSCode,
 				wd, npmCommand, npmArgs...,
 			)
 			if errRun != nil {
@@ -45,8 +52,8 @@ var (
 )
 
 func init() {
-	Command.Flags().BoolVar(&flagNPMDebug, "debug", flagNPMDebug, "start with a debug port")
-	Command.Flags().BoolVar(&flagStartVSCode, "debug-vscode", flagNPMDebug, "start a debug session in vscode")
-	Command.Flags().StringVar(&flagServicePath, "service-path", flagServicePath, "register service for a path")
-	Command.Flags().StringArrayVar(&flagServiceMimetypes, "service-mimes", flagServiceMimetypes, "register service for mime types")
+	Command.Flags().StringVar(&flagReverseProxyURL, "reverse-proxy-url", flagReverseProxyURL, "reverse proxy url")
+	Command.Flags().IntVar(&flagDebugServerPort, "debug-port", flagDebugServerPort, "start debug session on the given port NODE_DEBUG_PORT will be set")
+	Command.Flags().BoolVar(&flagStartVSCode, "debug-vscode", flagStartVSCode, "start a debug session in vscode, if no debug-port is defined it will be automatically assigned in NODE_DEBUG_PORT")
+	Command.Flags().IntVar(&flagPort, "port", flagPort, "which port to use, if 0 client-npm will look for a free port and set env PORT")
 }
