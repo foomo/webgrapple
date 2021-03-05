@@ -45,8 +45,9 @@ var (
 				wd, npmCommand, npmArgs...,
 			)
 			if errRun != nil {
-				logger.Error("run failed", zap.Error(errRun))
+				logger.Error("run failed", zap.String("error", errRun.Error()))
 			}
+			logger.Info("shutting down")
 		},
 	}
 )

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
-	"os"
 	"runtime"
 	"sync"
 	"time"
@@ -295,5 +294,6 @@ func intervalOverlap(min1, max1, min2, max2 int) bool {
 }
 
 func logf(severity string, format string, a ...interface{}) {
-	_, _ = fmt.Fprintf(os.Stderr, "["+severity+"] freeport: "+format+"\n", a...)
+	// behave sir
+	// _, _ = fmt.Fprintf(os.Stderr, "["+severity+"] freeport: "+format+"\n", a...)
 }

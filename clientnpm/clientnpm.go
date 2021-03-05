@@ -33,11 +33,15 @@ func getConfig(
 		// read config
 		config, errConfig := clientconfig.ReadConfig(configPath)
 		if errConfig != nil {
-			return nil, errors.Wrap(errConfig, "could not read config from file")
+			return nil, errorWrap(errConfig, "could not read config from file")
 		}
 		return config, nil
 	}
 	return nil, errors.New("config is missing")
+}
+
+func errorWrap(err error, wrap string) error {
+	return errors.New(wrap + ": " + err.Error())
 }
 
 // Run run the command, use this, if Command is in the way
@@ -60,7 +64,7 @@ func Run(
 	)
 	config, errGetConfig := getConfig(logger, path)
 	if errGetConfig != nil {
-		return errors.Wrap(errGetConfig, "failed to ge config")
+		return errorWrap(errGetConfig, "failed to ge config")
 	}
 
 	// get some ports
@@ -68,7 +72,7 @@ func Run(
 	if port == 0 {
 		ports, errTakePort := freeport.Take(1)
 		if errTakePort != nil {
-			return errors.Wrap(errTakePort, "could not find a free port")
+			return errorWrap(errTakePort, "could not find a free port")
 		}
 		port = ports[0]
 	}
@@ -77,7 +81,7 @@ func Run(
 	if flagDebugServerPort == 0 && flagStartVSCode {
 		debugPorts, errTakeDebugPort := freeport.Take(1)
 		if errTakeDebugPort != nil {
-			return errors.Wrap(errTakeDebugPort, "could not find a free debug port")
+			return errorWrap(errTakeDebugPort, "could not find a free debug port")
 		}
 		debugPort = debugPorts[0]
 	} else {
@@ -108,7 +112,7 @@ func Run(
 	logger.Info("time to register the config with the reverse proxy server(s)")
 	errAddServices := addServices(logger, flagReverseProxyAddress, config, port)
 	if errAddServices != nil {
-		return errors.Wrap(errAddServices, "could not upsert services to proxy")
+		return errorWrap(errAddServices, "could not upsert services to proxy")
 	}
 	defer removeServices(logger, flagReverseProxyAddress, config)
 
@@ -117,17 +121,17 @@ func Run(
 	cmd.Env = append(os.Environ(), additionalEnvVars...)
 	stdOutPipe, errStdOut := cmd.StdoutPipe()
 	if errStdOut != nil {
-		return errors.Wrap(errStdOut, "could not open std out")
+		return errorWrap(errStdOut, "could not open std out")
 	}
 	stdErrPipe, errStdErr := cmd.StderrPipe()
 	if errStdErr != nil {
-		return errors.Wrap(errStdErr, "could not open std err")
+		return errorWrap(errStdErr, "could not open std err")
 	}
 
 	logger.Info("starting npm command", zap.String("command", npmCmd), zap.Strings("args", npmArgs), zap.Strings("env", additionalEnvVars))
 	chanCmdWaitErr := make(chan error)
 	if errStart := cmd.Start(); errStart != nil {
-		return errors.Wrapf(errStart, fmt.Sprint("faled to start: ", npmCmd, ", with args ", npmArgs))
+		return errorWrap(errStart, fmt.Sprint("faled to start: ", npmCmd, ", with args ", npmArgs))
 	}
 	defer func() {
 		stdOutPipe.Close()
@@ -155,14 +159,14 @@ func Run(
 	select {
 	case err := <-chanCmdWaitErr:
 		if err != nil {
-			return errors.Wrapf(err, "command execution failed")
+			return errorWrap(err, "command execution failed")
 		}
-		fmt.Println("command complete")
+		logger.Info("command complete")
 	case sig := <-signalChan:
 		if err := cmd.Process.Kill(); err != nil {
-			return errors.Wrap(err, "killing child process")
+			return errorWrap(err, "killing child process")
 		}
-		fmt.Println("received signal interrupt,", sig, "shutting down gracefully")
+		logger.Info("received signal interrupt, shutting down gracefully", zap.String("sig", sig.String()))
 	}
 
 	defer logger.Info("terminating")

@@ -75,11 +75,11 @@ func vscodedebug(logger *zap.Logger, path, name string, debugPort int) error {
 			launchedVSCode := false
 			for i := 0; i < 5; i++ {
 				zapAttempt := zap.Int("attempt", i)
-				vsCodeStatus, errRunVSCodeStatus := exec.Command("code", "-s").CombinedOutput()
+				_, errRunVSCodeStatus := exec.Command("code", "-s").CombinedOutput()
 				if errRunVSCodeStatus != nil {
 					logger.Info("waiting for vscode to start", zapAttempt)
 				} else {
-					logger.Info("vscode is up", zap.String("status", string(vsCodeStatus)), zapAttempt)
+					logger.Info("vscode is up", zapAttempt)
 					launchedVSCode = true
 					break
 				}
