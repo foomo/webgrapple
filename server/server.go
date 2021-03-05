@@ -18,9 +18,9 @@ type srvr struct {
 	defaultProxyHandler http.HandlerFunc
 }
 
-func newServer(defaultProxyURL *url.URL, logger *zap.Logger) (*srvr, error) {
-	defaultProxy := httputil.NewSingleHostReverseProxy(defaultProxyURL)
-	r := newRegistry(logger)
+func newServer(backendURL *url.URL, logger *zap.Logger) (*srvr, error) {
+	defaultProxy := httputil.NewSingleHostReverseProxy(backendURL)
+	r := newRegistry(logger, backendURL)
 	service := &Service{
 		r: r,
 	}

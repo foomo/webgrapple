@@ -2,23 +2,11 @@ package server
 
 import (
 	"errors"
-	"net/http"
+	"net/url"
 
 	"github.com/foomo/webgrapple/vo"
 	"go.uber.org/zap"
 )
-
-// ServiceMap a map of registered services
-type ServiceMap map[vo.ServiceID]*vo.Service
-
-// Middleware your way to handle requests
-type Middleware func(next http.HandlerFunc) http.HandlerFunc
-
-// WebGrappleMiddleWareCreator create a project specific middleware, when configs change
-type WebGrappleMiddleWareCreator func(services ServiceMap) (middleware Middleware, errCreation error)
-
-// MiddlewareCreator set this to register you webgrapple middleware creator
-var MiddlewareCreator WebGrappleMiddleWareCreator = nil
 
 func (sm ServiceMap) cp() (copy ServiceMap) {
 	copy = ServiceMap{}
@@ -34,13 +22,15 @@ type registryState struct {
 }
 
 type registry struct {
-	state  *registryState
-	logger *zap.Logger
+	backendURL *url.URL
+	state      *registryState
+	logger     *zap.Logger
 }
 
-func newRegistry(logger *zap.Logger) *registry {
+func newRegistry(logger *zap.Logger, backendURL *url.URL) *registry {
 	return &registry{
-		logger: logger,
+		logger:     logger,
+		backendURL: backendURL,
 	}
 }
 
@@ -79,7 +69,7 @@ func (r *registry) remove(ids []vo.ServiceID) (err error) {
 }
 
 func (r *registry) update(services ServiceMap) error {
-	newMiddleWare, errCreateMiddleWare := MiddlewareCreator(services)
+	newMiddleWare, errCreateMiddleWare := MiddlewareCreator(services, r.backendURL)
 	if errCreateMiddleWare != nil {
 		return errCreateMiddleWare
 	}
