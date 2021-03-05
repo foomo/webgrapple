@@ -4,12 +4,11 @@ import (
 	"errors"
 	"io/ioutil"
 
-	"github.com/foomo/webgrapple/server"
 	"github.com/foomo/webgrapple/vo"
 	"gopkg.in/yaml.v3"
 )
 
-func ReadConfig(file string) (multiServerConfig vo.MultiServerClientConfig, err error) {
+func ReadConfig(file string) (multiServerConfig vo.ClientConfig, err error) {
 	configBytes, errRead := ioutil.ReadFile(file)
 	if errRead != nil {
 		return nil, errRead
@@ -17,27 +16,19 @@ func ReadConfig(file string) (multiServerConfig vo.MultiServerClientConfig, err 
 	return readConfig(configBytes)
 }
 
-func readConfig(configBytes []byte) (multiServerConfig vo.MultiServerClientConfig, err error) {
+func readConfig(configBytes []byte) (multiServerConfig vo.ClientConfig, err error) {
 
-	// complex beast mode
-	multiServerConfig = vo.MultiServerClientConfig{}
-	if yaml.Unmarshal(configBytes, &multiServerConfig) == nil {
-		return multiServerConfig, nil
-	}
-
-	// a list of service
+	// a list of services
 	clientConfig := vo.ClientConfig{}
 	if yaml.Unmarshal(configBytes, &clientConfig) == nil {
-		return vo.MultiServerClientConfig{
-			server.DefaultServiceURL: clientConfig,
-		}, nil
+		return clientConfig, nil
 	}
 
 	// just one service
 	service := &vo.Service{}
 	if yaml.Unmarshal(configBytes, &service) == nil {
-		return vo.MultiServerClientConfig{
-			server.DefaultServiceURL: vo.ClientConfig{service},
+		return vo.ClientConfig{
+			service,
 		}, nil
 	}
 
