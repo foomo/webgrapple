@@ -21,9 +21,9 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := utils.GetLogger()
 			logger.Info("running a local reverse proxy server", zap.Strings("addresses", flagAddresses))
-			errSign := run(logger, flagServiceAddress, flagBackendURL, flagAddresses, flagCert, flagKey)
-			if errSign != nil {
-				logger.Error("could not run server", zap.Error(errSign))
+			errRun := run(logger, flagServiceAddress, flagBackendURL, flagAddresses, flagCert, flagKey)
+			if errRun != nil {
+				logger.Error("could not run server", zap.Error(errRun))
 			}
 		},
 	}
@@ -31,8 +31,8 @@ var (
 
 func init() {
 	Command.Flags().StringArrayVarP(&flagAddresses, "addresses", "a", flagAddresses, "what adresses to listen to / self sign a cert for")
-	Command.Flags().StringVarP(&flagCert, "cert", "c", flagCert, "cert file relative path")
-	Command.Flags().StringVarP(&flagKey, "key", "k", flagKey, "key file relative path")
-	Command.Flags().StringVarP(&flagBackendURL, "backend", "b", flagBackendURL, "backend url")
-	Command.Flags().StringVarP(&flagServiceAddress, "service-addr", "", flagServiceAddress, "service address url")
+	Command.Flags().StringVar(&flagCert, "cert", flagCert, "cert file relative path")
+	Command.Flags().StringVar(&flagKey, "key", flagKey, "key file relative path")
+	Command.Flags().StringVar(&flagBackendURL, "backend", flagBackendURL, "backend url")
+	Command.Flags().StringVar(&flagServiceAddress, "service-addr", flagServiceAddress, "service address url")
 }

@@ -33,5 +33,10 @@ func newServer(defaultProxyURL *url.URL, logger *zap.Logger) (*srvr, error) {
 }
 
 func (s *srvr) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.r.middleware(s.defaultProxyHandler)(w, r)
+	if s.r.state != nil && s.r.state.middleware != nil {
+		s.r.state.middleware(s.defaultProxyHandler)(w, r)
+	} else {
+		s.r.logger.Info("you might want to bring up some services, passing request on to backend")
+		s.defaultProxyHandler(w, r)
+	}
 }
