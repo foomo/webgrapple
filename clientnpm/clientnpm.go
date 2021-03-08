@@ -60,7 +60,7 @@ func Run(
 	logger.Info(
 		"starting devproxy client for",
 		zap.String("path", path),
-		zap.String("name", path),
+		zap.String("name", name),
 	)
 	config, errGetConfig := getConfig(logger, path)
 	if errGetConfig != nil {
