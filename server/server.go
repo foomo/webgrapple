@@ -37,6 +37,6 @@ func (s *srvr) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.r.state.middleware(s.defaultProxyHandler)(w, r)
 	} else {
 		s.r.logger.Info("you might want to bring up some services, passing request on to backend")
-		s.defaultProxyHandler(w, r)
+		http.Error(w, "not available - please register at least one service, so that we can bring up your middleware", http.StatusServiceUnavailable)
 	}
 }
