@@ -3,16 +3,18 @@ package clientnpm
 import (
 	"os"
 
-	"github.com/foomo/webgrapple/server"
-	"github.com/foomo/webgrapple/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+
+	"github.com/foomo/webgrapple/server"
+	"github.com/foomo/webgrapple/utils"
 )
 
 var (
 	flagDebugServerPort = 0
 	flagStartVSCode     = false
 	flagReverseProxyURL = server.DefaultServiceURL
+	flagConfigPath      = ""
 	flagPort            = 0
 	// Command use this for NPM support, when composing your own webgrapple
 	Command = &cobra.Command{
@@ -42,7 +44,7 @@ var (
 				logger,
 				flagReverseProxyURL,
 				flagPort, flagDebugServerPort, flagStartVSCode,
-				wd, npmCommand, npmArgs...,
+				wd, flagConfigPath, npmCommand, npmArgs...,
 			)
 			if errRun != nil {
 				logger.Error("run failed", zap.String("error", errRun.Error()))
@@ -54,6 +56,7 @@ var (
 
 func init() {
 	Command.Flags().StringVar(&flagReverseProxyURL, "reverse-proxy-url", flagReverseProxyURL, "reverse proxy url")
+	Command.Flags().StringVar(&flagConfigPath, "config", flagConfigPath, "path to webgrapple.yaml")
 	Command.Flags().IntVar(&flagDebugServerPort, "debug-port", flagDebugServerPort, "start debug session on the given port NODE_DEBUG_PORT will be set")
 	Command.Flags().BoolVar(&flagStartVSCode, "debug-vscode", flagStartVSCode, "start a debug session in vscode, if no debug-port is defined it will be automatically assigned in NODE_DEBUG_PORT")
 	Command.Flags().IntVar(&flagPort, "port", flagPort, "which port to use, if 0 client-npm will look for a free port and set env PORT")

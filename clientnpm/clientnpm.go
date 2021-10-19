@@ -10,18 +10,24 @@ import (
 
 	"github.com/pkg/errors"
 
+	"go.uber.org/zap"
+
 	"github.com/foomo/webgrapple/clientconfig"
 	"github.com/foomo/webgrapple/server"
 	"github.com/foomo/webgrapple/utils/freeport"
 	"github.com/foomo/webgrapple/vo"
-	"go.uber.org/zap"
 )
 
 func getConfig(
 	logger *zap.Logger,
 	path string,
+	configPath string,
 ) (config vo.ClientConfig, err error) {
-	configPath := filepath.Join(path, "webgrapple.yaml")
+
+	if configPath == "" {
+		configPath = filepath.Join(path, "webgrapple.yaml")
+	}
+
 	logger.Info("checking for configuration",
 		zap.String("config-path", configPath),
 	)
@@ -51,6 +57,7 @@ func Run(
 	flagPort int,
 	flagDebugServerPort int,
 	flagStartVSCode bool,
+	flagConfigPath string,
 	path string,
 	npmCmd string, npmArgs ...string,
 ) error {
@@ -62,7 +69,7 @@ func Run(
 		zap.String("path", path),
 		zap.String("name", name),
 	)
-	config, errGetConfig := getConfig(logger, path)
+	config, errGetConfig := getConfig(logger, path, flagConfigPath)
 	if errGetConfig != nil {
 		return errorWrap(errGetConfig, "failed to get config webgrapple.yaml is missing ?!")
 	}
