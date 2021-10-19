@@ -44,7 +44,7 @@ var (
 				logger,
 				flagReverseProxyURL,
 				flagPort, flagDebugServerPort, flagStartVSCode,
-				wd, flagConfigPath, npmCommand, npmArgs...,
+				flagConfigPath, wd, npmCommand, npmArgs...,
 			)
 			if errRun != nil {
 				logger.Error("run failed", zap.String("error", errRun.Error()))
