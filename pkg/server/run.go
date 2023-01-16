@@ -1,7 +1,9 @@
 package server
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"net/url"
@@ -9,8 +11,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-
-	"go.uber.org/zap"
 )
 
 type hostName string
@@ -83,7 +83,7 @@ func filesExist(files ...string) (bool, error) {
 }
 
 func ensureCertAndKey(
-	logger *zap.Logger,
+	l Logger,
 	commonNames []hostName,
 	certFile, keyFile string,
 ) (certFileCorrected, keyFileCorrected string, err error) {
@@ -113,7 +113,7 @@ func ensureCertAndKey(
 		tempDir := os.TempDir()
 		certFile = filepath.Join(tempDir, "cert-"+certNameBase+".pem")
 		keyFile = filepath.Join(tempDir, "key-"+certNameBase+".pem")
-		logger.Info("no key or cert given - will try temporary files", zap.String("cert", certFile), zap.String("key", keyFile))
+		l.Info("no key or cert given - will try temporary files")
 		certAndKeyExist, errFilesExist := filesExist(certFile, keyFile)
 		if errFilesExist != nil {
 			return certFile, keyFile, errFilesExist
@@ -127,29 +127,29 @@ func ensureCertAndKey(
 		for _, certCommonName := range commonNames {
 			certCommonHostNames = append(certCommonHostNames, string(certCommonName))
 		}
-		logger.Info("generating self signed certificate and key", zap.Strings("host-names", certCommonHostNames))
-		errSign := selfsign(logger, certCommonHostNames, certFile, keyFile)
+		l.Info("generating self signed certificate and key")
+		errSign := selfsign(l, certCommonHostNames, certFile, keyFile)
 		if errSign != nil {
 			return certFile, keyFile, errSign
 		}
 	} else {
-		logger.Info("using existing cert and key")
+		l.Info("using existing cert and key")
 	}
 	return certFile, keyFile, nil
 
 }
 
-func checkHosts(logger *zap.Logger, hostList []hostName) (hostAdresses map[hostName]string) {
+func checkHosts(l Logger, hostList []hostName) (hostAdresses map[hostName]string) {
 	hostAdresses = map[hostName]string{}
 	for _, host := range hostList {
 		addresses, errLookup := net.LookupHost(string(host))
 		if errLookup != nil {
-			logger.Error("could not look up host, did you miss to add a hosts entry, or DNS is not available?", zap.String("host", string(host)), zap.Error(errLookup))
+			l.Error("could not look up host %q, did you miss to add a hosts entry, or DNS is not available? %v", host, errLookup)
 		} else {
-			logger.Info("host check", zap.String("host", string(host)), zap.Strings("addresses", addresses))
+			l.Info("checking host %q for addres %q", string(host), addresses)
 		}
 		if len(addresses) == 0 {
-			logger.Info("not addresses found, falling back to 127.0.0.1")
+			l.Info("not addresses found, falling back to 127.0.0.1")
 			addresses = []string{"127.0.0.1"}
 		}
 		hostAdresses[host] = strings.Join(addresses, ",")
@@ -157,16 +157,16 @@ func checkHosts(logger *zap.Logger, hostList []hostName) (hostAdresses map[hostN
 	return hostAdresses
 }
 
-func Run(logger *zap.Logger, serviceAddress, backendURLString string, urlStrings []string, certFile, keyFile string) error {
+func Run(ctx context.Context, l Logger, serviceAddress, backendURLString string, urlStrings []string, certFile, keyFile string) error {
 
 	hosts, urls, errExtractHosts := extractDataFromURLStrings(urlStrings)
 	if errExtractHosts != nil {
 		return errExtractHosts
 	}
 
-	hostAddresses := checkHosts(logger, hosts)
+	hostAddresses := checkHosts(l, hosts)
 
-	certFile, keyFile, errCertainly := ensureCertAndKey(logger, hosts, certFile, keyFile)
+	certFile, keyFile, errCertainly := ensureCertAndKey(l, hosts, certFile, keyFile)
 	if errCertainly != nil {
 		return errCertainly
 	}
@@ -176,7 +176,7 @@ func Run(logger *zap.Logger, serviceAddress, backendURLString string, urlStrings
 		return errors.New("could not parse backend url: " + errParseBackendURL.Error())
 	}
 
-	s, errServer := newServer(backendURL, logger)
+	s, errServer := newServer(backendURL, l)
 	if errServer != nil {
 		return errServer
 	}
@@ -209,10 +209,9 @@ func Run(logger *zap.Logger, serviceAddress, backendURLString string, urlStrings
 		}
 		usedAddressPorts[addressPort]++
 
-		zapAddressport := zap.String("address:port", addressPort)
 		if usedAddressPorts[addressPort] == 1 {
 			go func(u *url.URL, useTLS bool, port string) {
-				logger.Info("starting server", zapAddressport, zap.Bool("useTLS", useTLS))
+				l.Info(fmt.Sprintf("starting server on %s", addressPort))
 				if useTLS {
 					chanErr <- http.ListenAndServeTLS(u.Host+port, certFile, keyFile, s)
 				} else {
@@ -220,11 +219,11 @@ func Run(logger *zap.Logger, serviceAddress, backendURLString string, urlStrings
 				}
 			}(u, useTLS, port)
 		} else {
-			logger.Info("not starting server - address already bound", zapAddressport)
+			l.Info(fmt.Sprintf("not starting server - address %q already bound", addressPort))
 		}
 	}
 	go func() {
-		logger.Info("starting dev client service", zap.String("address", serviceAddress))
+		l.Info(fmt.Sprintf("starting dev client service on %q", serviceAddress))
 		chanErr <- http.ListenAndServe(serviceAddress, s.serviceHandler)
 	}()
 	return <-chanErr

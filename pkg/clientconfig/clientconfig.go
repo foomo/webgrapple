@@ -2,14 +2,14 @@ package clientconfig
 
 import (
 	"errors"
-	"io/ioutil"
+	"os"
 
 	"github.com/foomo/webgrapple/pkg/vo"
 	"gopkg.in/yaml.v3"
 )
 
 func ReadConfig(file string) (multiServerConfig vo.ClientConfig, err error) {
-	configBytes, errRead := ioutil.ReadFile(file)
+	configBytes, errRead := os.ReadFile(file)
 	if errRead != nil {
 		return nil, errRead
 	}

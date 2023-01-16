@@ -1,16 +1,16 @@
 package clientnpm
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
-
-	"go.uber.org/zap"
 
 	"github.com/foomo/webgrapple/pkg/clientconfig"
 	"github.com/foomo/webgrapple/pkg/server"
@@ -19,7 +19,7 @@ import (
 )
 
 func getConfig(
-	logger *zap.Logger,
+	l Logger,
 	path string,
 	configPath string,
 ) (config vo.ClientConfig, err error) {
@@ -28,14 +28,12 @@ func getConfig(
 		configPath = filepath.Join(path, "webgrapple.yaml")
 	}
 
-	logger.Info("checking for configuration",
-		zap.String("config-path", configPath),
-	)
+	l.Info(fmt.Sprintf("checking for configuration at path %q", configPath))
 	// is there a config
 	info, errStat := os.Stat(configPath)
 	configExists := errStat == nil && !info.IsDir()
 	if configExists {
-		logger.Info("reading configuration")
+		l.Info("reading configuration")
 		// read config
 		config, errConfig := clientconfig.ReadConfig(configPath)
 		if errConfig != nil {
@@ -52,7 +50,8 @@ func errorWrap(err error, wrap string) error {
 
 // Run run the command, use this, if Command is in the way
 func Run(
-	logger *zap.Logger,
+	_ context.Context,
+	l Logger,
 	flagReverseProxyAddress string,
 	flagPort int,
 	flagDebugServerPort int,
@@ -64,12 +63,8 @@ func Run(
 
 	// setup vars
 	name := filepath.Base(path)
-	logger.Info(
-		"starting devproxy client for",
-		zap.String("path", path),
-		zap.String("name", name),
-	)
-	config, errGetConfig := getConfig(logger, path, flagConfigPath)
+	l.Info(fmt.Sprintf("starting devproxy client for path %q and name %q", path, name))
+	config, errGetConfig := getConfig(l, path, flagConfigPath)
 	if errGetConfig != nil {
 		return errorWrap(errGetConfig, "failed to get config webgrapple.yaml is missing ?!")
 	}
@@ -95,7 +90,7 @@ func Run(
 		debugPort = flagDebugServerPort
 	}
 	if flagStartVSCode {
-		vscodedebug(logger, path, name, debugPort)
+		vscodedebug(l, path, name, debugPort)
 	}
 
 	// ports have to be set in env
@@ -116,12 +111,12 @@ func Run(
 	}
 
 	// tell the server about it
-	logger.Info("time to register the config with the reverse proxy server(s)")
-	errAddServices := addServices(logger, flagReverseProxyAddress, config, port)
+	l.Info("time to register the config with the reverse proxy server(s)")
+	errAddServices := addServices(flagReverseProxyAddress, config, port)
 	if errAddServices != nil {
 		return errorWrap(errAddServices, "could not upsert services to proxy")
 	}
-	defer removeServices(logger, flagReverseProxyAddress, config)
+	defer removeServices(l, flagReverseProxyAddress, config)
 
 	// prepare npm command
 	cmd := exec.Command(npmCmd, npmArgs...)
@@ -135,7 +130,7 @@ func Run(
 		return errorWrap(errStdErr, "could not open std err")
 	}
 
-	logger.Info("starting npm command", zap.String("command", npmCmd), zap.Strings("args", npmArgs), zap.Strings("env", additionalEnvVars))
+	l.Info(fmt.Sprintf("starting npm command '%s %s with env: %s'", npmCmd, strings.Join(npmArgs, " "), strings.Join(additionalEnvVars, "")))
 	chanCmdWaitErr := make(chan error)
 	if errStart := cmd.Start(); errStart != nil {
 		return errorWrap(errStart, fmt.Sprint("faled to start: ", npmCmd, ", with args ", npmArgs))
@@ -151,12 +146,12 @@ func Run(
 
 	go func() {
 		if _, err := io.Copy(os.Stdout, stdOutPipe); err != nil && err.(*os.PathError).Err != os.ErrClosed {
-			logger.Error("could not copy std out", zap.Error(err))
+			l.Error(fmt.Sprintf("could not copy std out: %v", err))
 		}
 	}()
 	go func() {
 		if _, err := io.Copy(os.Stderr, stdErrPipe); err != nil && err.(*os.PathError).Err != os.ErrClosed {
-			logger.Error("could not copy std err", zap.Error(err))
+			l.Error(fmt.Sprintf("could not copy std err: %v", err))
 		}
 	}()
 
@@ -168,19 +163,19 @@ func Run(
 		if err != nil {
 			return errorWrap(err, "command execution failed")
 		}
-		logger.Info("command complete")
+		l.Info("command complete")
 	case sig := <-signalChan:
 		if err := cmd.Process.Kill(); err != nil {
 			return errorWrap(err, "killing child process")
 		}
-		logger.Info("received signal interrupt, shutting down gracefully", zap.String("sig", sig.String()))
+		l.Info(fmt.Sprintf("received signal (%s) interrupt, shutting down gracefully", sig.String()))
 	}
 
-	defer logger.Info("terminating")
+	defer l.Info("terminating")
 	return nil
 }
 
-func removeServices(logger *zap.Logger, address string, config vo.ClientConfig) {
+func removeServices(l Logger, address string, config vo.ClientConfig) {
 	client := server.NewServiceGoTSRPCClient(string(address), server.DefaultEndPoint)
 	serviceIDs := []vo.ServiceID{}
 	for _, s := range config {
@@ -188,14 +183,14 @@ func removeServices(logger *zap.Logger, address string, config vo.ClientConfig) 
 	}
 	errRemove, errClient := client.Remove(serviceIDs)
 	if errClient != nil {
-		logger.Error("could not remove services, got a client error", zap.Error(errClient))
+		l.Error(fmt.Sprintf("could not remove services, got a client error: %v", errClient))
 	}
 	if errRemove != nil {
-		logger.Error("could not remove services", zap.Error(errRemove))
+		l.Error(fmt.Sprintf("could not remove services due to error: %v", errRemove))
 	}
 }
 
-func addServices(logger *zap.Logger, address string, config vo.ClientConfig, port int) error {
+func addServices(address string, config vo.ClientConfig, port int) error {
 	client := server.NewServiceGoTSRPCClient(string(address), server.DefaultEndPoint)
 	errUpsert, errClient := client.Upsert(config)
 	if errClient != nil {

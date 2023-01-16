@@ -2,10 +2,10 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 
 	"github.com/foomo/webgrapple/pkg/vo"
-	"go.uber.org/zap"
 )
 
 func (sm ServiceMap) cp() (copy ServiceMap) {
@@ -24,10 +24,10 @@ type registryState struct {
 type registry struct {
 	backendURL *url.URL
 	state      *registryState
-	logger     *zap.Logger
+	logger     Logger
 }
 
-func newRegistry(logger *zap.Logger, backendURL *url.URL) *registry {
+func newRegistry(logger Logger, backendURL *url.URL) *registry {
 	return &registry{
 		logger:     logger,
 		backendURL: backendURL,
@@ -45,11 +45,7 @@ func (r *registry) getServicesCopy() ServiceMap {
 func (r *registry) upsert(services []*vo.Service) (err error) {
 	copy := r.getServicesCopy()
 	for _, service := range services {
-		r.logger.Info(
-			"upserting service",
-			zap.String("id", string(service.ID)),
-			zap.String("backendAddress", service.Address),
-		)
+		r.logger.Info(fmt.Sprintf("upserting service %q with backend %q", service.ID, service.Address))
 		copy[service.ID] = service
 	}
 	return r.update(copy)
@@ -62,7 +58,7 @@ func (r *registry) remove(ids []vo.ServiceID) (err error) {
 		if !found {
 			return errors.New("service not found")
 		}
-		r.logger.Info("removing service", zap.String("id", string(id)))
+		r.logger.Info(fmt.Sprintf("removing service with ID %q", id))
 		delete(copy, id)
 	}
 	return r.update(copy)

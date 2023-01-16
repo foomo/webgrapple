@@ -2,20 +2,20 @@ package clientnpm
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"fmt"
 	"net/url"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 )
 
 var errWorkspaceNotFound = errors.New("vscode workspace file not found")
 
 func vscodeGetCodeWorkspace(path string) (string, error) {
-	iterator, errIterator := ioutil.ReadDir(path)
+	iterator, errIterator := os.ReadDir(path)
 	if errIterator != nil {
 		return "", errIterator
 	}
@@ -54,7 +54,7 @@ func vscodeDebugConfig(name string, debugPort int) (config string, err error) {
 	return string(launchJSONBytes), nil
 }
 
-func vscodedebug(logger *zap.Logger, path, name string, debugPort int) error {
+func vscodedebug(logger Logger, path, name string, debugPort int) error {
 	absPath, errAbsConfigPath := filepath.Abs(path)
 	if errAbsConfigPath != nil {
 		return errAbsConfigPath
@@ -74,32 +74,30 @@ func vscodedebug(logger *zap.Logger, path, name string, debugPort int) error {
 		if errLaunch == nil {
 			launchedVSCode := false
 			for i := 0; i < 5; i++ {
-				zapAttempt := zap.Int("attempt", i)
 				_, errRunVSCodeStatus := exec.Command("code", "-s").CombinedOutput()
 				if errRunVSCodeStatus != nil {
-					logger.Info("waiting for vscode to start", zapAttempt)
+					logger.Info("waiting for vscode to start...")
 				} else {
-					logger.Info("vscode is up", zapAttempt)
+					logger.Info("vscode is up")
 					launchedVSCode = true
 					break
 				}
 			}
 			if launchedVSCode {
-				logger.Info("launching vscode", zap.String("json", debugConfig))
+				logger.Info(fmt.Sprintf("launching vscode: %s", debugConfig))
 				combinedOut, errRun := exec.Command(
 					"open",
 					"vscode://fabiospampinato.vscode-debug-launcher/launch?args="+url.PathEscape(
 						debugConfig,
 					)).CombinedOutput()
-				zapOutput := zap.String("output", string(combinedOut))
 				if errRun != nil {
-					logger.Error("could not start vscode", zapOutput)
+					logger.Error("could not start vscode %q", string(combinedOut))
 				} else {
-					logger.Info("started vscode session", zapOutput)
+					logger.Info("started vscode session %q", string(combinedOut))
 				}
 			}
 		} else {
-			logger.Error("could not start vscode", zap.Error(errLaunch), zap.String("output", string(launchOutput)))
+			logger.Error(fmt.Sprintf("could not start vscode due to error: %v and output %q", errLaunch, launchOutput))
 		}
 	}()
 	return nil

@@ -41,7 +41,8 @@ var (
 				npmArgs = args[1:]
 			}
 			errRun := clientnpm.Run(
-				logger,
+				cmd.Context(),
+				logger.Sugar(),
 				flagReverseProxyURL,
 				flagPort, flagDebugServerPort, flagStartVSCode,
 				flagConfigPath, wd, npmCommand, npmArgs...,

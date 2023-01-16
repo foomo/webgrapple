@@ -23,7 +23,15 @@ var (
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := utils.GetLogger()
 			logger.Info("running a local reverse proxy server", zap.Strings("addresses", flagAddresses))
-			errRun := server.Run(logger, flagServiceAddress, flagBackendURL, flagAddresses, flagCert, flagKey)
+			errRun := server.Run(
+				cmd.Context(),
+				logger.Sugar(),
+				flagServiceAddress,
+				flagBackendURL,
+				flagAddresses,
+				flagCert,
+				flagKey,
+			)
 			if errRun != nil {
 				logger.Error("could not run server", zap.Error(errRun))
 			}

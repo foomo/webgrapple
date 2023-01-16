@@ -12,12 +12,10 @@ import (
 	"net"
 	"os"
 	"time"
-
-	"go.uber.org/zap"
 )
 
 // derived from : https://raw.githubusercontent.com/golang/go/master/src/crypto/tls/generate_cert.go
-func selfsign(logger *zap.Logger, hosts []string, certFile, keyFile string) error {
+func selfsign(logger Logger, hosts []string, certFile, keyFile string) error {
 
 	const timeFormat = "Jan 2 15:04:05 2006"
 	var (

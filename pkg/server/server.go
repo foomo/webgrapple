@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-
-	"go.uber.org/zap"
 )
 
 const DefaultServiceURL = "http://127.0.0.1:8888"
@@ -17,7 +15,7 @@ type srvr struct {
 	defaultProxyHandler http.HandlerFunc
 }
 
-func newServer(backendURL *url.URL, logger *zap.Logger) (*srvr, error) {
+func newServer(backendURL *url.URL, logger Logger) (*srvr, error) {
 	defaultProxy := httputil.NewSingleHostReverseProxy(backendURL)
 	r := newRegistry(logger, backendURL)
 	service := &Service{
