@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/foomo/webgrapple/pkg/log"
 	"github.com/pkg/errors"
 )
 
@@ -54,7 +55,7 @@ func vscodeDebugConfig(name string, debugPort int) (config string, err error) {
 	return string(launchJSONBytes), nil
 }
 
-func vscodedebug(logger Logger, path, name string, debugPort int) error {
+func vscodedebug(logger log.Logger, path, name string, debugPort int) error {
 	absPath, errAbsConfigPath := filepath.Abs(path)
 	if errAbsConfigPath != nil {
 		return errAbsConfigPath

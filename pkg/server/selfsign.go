@@ -12,10 +12,12 @@ import (
 	"net"
 	"os"
 	"time"
+
+	"github.com/foomo/webgrapple/pkg/log"
 )
 
 // derived from : https://raw.githubusercontent.com/golang/go/master/src/crypto/tls/generate_cert.go
-func selfsign(logger Logger, hosts []string, certFile, keyFile string) error {
+func selfsign(l log.Logger, hosts []string, certFile, keyFile string) error {
 
 	const timeFormat = "Jan 2 15:04:05 2006"
 	var (
@@ -107,6 +109,6 @@ func selfsign(logger Logger, hosts []string, certFile, keyFile string) error {
 	if err := keyOut.Close(); err != nil {
 		return fmt.Errorf("Error closing key.pem: %w", err)
 	}
-	logger.Info("made certs")
+	l.Info("made certs")
 	return nil
 }

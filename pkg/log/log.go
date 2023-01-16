@@ -1,4 +1,4 @@
-package clientnpm
+package log
 
 type Logger interface {
 	Info(a ...interface{})

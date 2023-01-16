@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/foomo/webgrapple/pkg/log"
 	"github.com/pkg/errors"
 
 	"github.com/foomo/webgrapple/pkg/clientconfig"
@@ -19,7 +20,7 @@ import (
 )
 
 func getConfig(
-	l Logger,
+	l log.Logger,
 	path string,
 	configPath string,
 ) (config vo.ClientConfig, err error) {
@@ -51,7 +52,7 @@ func errorWrap(err error, wrap string) error {
 // Run run the command, use this, if Command is in the way
 func Run(
 	_ context.Context,
-	l Logger,
+	l log.Logger,
 	flagReverseProxyAddress string,
 	flagPort int,
 	flagDebugServerPort int,
@@ -175,7 +176,7 @@ func Run(
 	return nil
 }
 
-func removeServices(l Logger, address string, config vo.ClientConfig) {
+func removeServices(l log.Logger, address string, config vo.ClientConfig) {
 	client := server.NewServiceGoTSRPCClient(string(address), server.DefaultEndPoint)
 	serviceIDs := []vo.ServiceID{}
 	for _, s := range config {

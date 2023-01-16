@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+
+	"github.com/foomo/webgrapple/pkg/log"
 )
 
 const DefaultServiceURL = "http://127.0.0.1:8888"
@@ -15,9 +17,9 @@ type srvr struct {
 	defaultProxyHandler http.HandlerFunc
 }
 
-func newServer(backendURL *url.URL, logger Logger) (*srvr, error) {
+func newServer(backendURL *url.URL, l log.Logger) (*srvr, error) {
 	defaultProxy := httputil.NewSingleHostReverseProxy(backendURL)
-	r := newRegistry(logger, backendURL)
+	r := newRegistry(l, backendURL)
 	service := &Service{
 		r: r,
 	}

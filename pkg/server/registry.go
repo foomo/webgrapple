@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/foomo/webgrapple/pkg/log"
 	"github.com/foomo/webgrapple/pkg/vo"
 )
 
@@ -24,12 +25,12 @@ type registryState struct {
 type registry struct {
 	backendURL *url.URL
 	state      *registryState
-	logger     Logger
+	logger     log.Logger
 }
 
-func newRegistry(logger Logger, backendURL *url.URL) *registry {
+func newRegistry(l log.Logger, backendURL *url.URL) *registry {
 	return &registry{
-		logger:     logger,
+		logger:     l,
 		backendURL: backendURL,
 	}
 }

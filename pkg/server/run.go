@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/foomo/webgrapple/pkg/log"
 )
 
 type hostName string
@@ -83,7 +85,7 @@ func filesExist(files ...string) (bool, error) {
 }
 
 func ensureCertAndKey(
-	l Logger,
+	l log.Logger,
 	commonNames []hostName,
 	certFile, keyFile string,
 ) (certFileCorrected, keyFileCorrected string, err error) {
@@ -139,7 +141,7 @@ func ensureCertAndKey(
 
 }
 
-func checkHosts(l Logger, hostList []hostName) (hostAdresses map[hostName]string) {
+func checkHosts(l log.Logger, hostList []hostName) (hostAdresses map[hostName]string) {
 	hostAdresses = map[hostName]string{}
 	for _, host := range hostList {
 		addresses, errLookup := net.LookupHost(string(host))
@@ -157,7 +159,7 @@ func checkHosts(l Logger, hostList []hostName) (hostAdresses map[hostName]string
 	return hostAdresses
 }
 
-func Run(ctx context.Context, l Logger, serviceAddress, backendURLString string, urlStrings []string, certFile, keyFile string) error {
+func Run(ctx context.Context, l log.Logger, serviceAddress, backendURLString string, urlStrings []string, certFile, keyFile string) error {
 
 	hosts, urls, errExtractHosts := extractDataFromURLStrings(urlStrings)
 	if errExtractHosts != nil {
