@@ -23,15 +23,17 @@ type registryState struct {
 }
 
 type registry struct {
-	backendURL *url.URL
-	state      *registryState
-	logger     log.Logger
+	backendURL        *url.URL
+	state             *registryState
+	logger            log.Logger
+	middlewareFactory WebGrappleMiddleWareCreator
 }
 
-func newRegistry(l log.Logger, backendURL *url.URL) *registry {
+func newRegistry(l log.Logger, backendURL *url.URL, middlewareFactory WebGrappleMiddleWareCreator) *registry {
 	return &registry{
-		logger:     l,
-		backendURL: backendURL,
+		logger:            l,
+		backendURL:        backendURL,
+		middlewareFactory: middlewareFactory,
 	}
 }
 
@@ -66,7 +68,7 @@ func (r *registry) remove(ids []vo.ServiceID) (err error) {
 }
 
 func (r *registry) update(services ServiceMap) error {
-	newMiddleWare, errCreateMiddleWare := MiddlewareCreator(services, r.backendURL)
+	newMiddleWare, errCreateMiddleWare := r.middlewareFactory(services, r.backendURL)
 	if errCreateMiddleWare != nil {
 		return errCreateMiddleWare
 	}

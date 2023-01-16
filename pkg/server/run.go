@@ -159,7 +159,14 @@ func checkHosts(l log.Logger, hostList []hostName) (hostAdresses map[hostName]st
 	return hostAdresses
 }
 
-func Run(ctx context.Context, l log.Logger, serviceAddress, backendURLString string, urlStrings []string, certFile, keyFile string) error {
+func Run(
+	ctx context.Context,
+	l log.Logger,
+	serviceAddress, backendURLString string,
+	urlStrings []string,
+	certFile, keyFile string,
+	middlewareFactory WebGrappleMiddleWareCreator,
+) error {
 
 	hosts, urls, errExtractHosts := extractDataFromURLStrings(urlStrings)
 	if errExtractHosts != nil {
@@ -178,7 +185,7 @@ func Run(ctx context.Context, l log.Logger, serviceAddress, backendURLString str
 		return errors.New("could not parse backend url: " + errParseBackendURL.Error())
 	}
 
-	s, errServer := newServer(backendURL, l)
+	s, errServer := newServer(backendURL, l, middlewareFactory)
 	if errServer != nil {
 		return errServer
 	}

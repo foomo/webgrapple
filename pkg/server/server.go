@@ -17,9 +17,9 @@ type srvr struct {
 	defaultProxyHandler http.HandlerFunc
 }
 
-func newServer(backendURL *url.URL, l log.Logger) (*srvr, error) {
+func newServer(backendURL *url.URL, l log.Logger, middlewareFactory WebGrappleMiddleWareCreator) (*srvr, error) {
 	defaultProxy := httputil.NewSingleHostReverseProxy(backendURL)
-	r := newRegistry(l, backendURL)
+	r := newRegistry(l, backendURL, middlewareFactory)
 	service := &Service{
 		r: r,
 	}

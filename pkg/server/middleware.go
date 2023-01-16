@@ -15,6 +15,3 @@ type Middleware func(next http.HandlerFunc) http.HandlerFunc
 
 // WebGrappleMiddleWareCreator create a project specific middleware, when configs change
 type WebGrappleMiddleWareCreator func(services ServiceMap, fallbackServerURL *url.URL) (middleware Middleware, errCreation error)
-
-// MiddlewareCreator set this to register you webgrapple middleware creator
-var MiddlewareCreator WebGrappleMiddleWareCreator = nil
