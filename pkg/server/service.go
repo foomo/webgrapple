@@ -1,6 +1,6 @@
 package server
 
-import "github.com/foomo/webgrapple/vo"
+import "github.com/foomo/webgrapple/pkg/vo"
 
 type Service struct {
 	r *registry

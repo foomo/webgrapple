@@ -12,10 +12,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/foomo/webgrapple/clientconfig"
-	"github.com/foomo/webgrapple/server"
-	"github.com/foomo/webgrapple/utils/freeport"
-	"github.com/foomo/webgrapple/vo"
+	"github.com/foomo/webgrapple/pkg/clientconfig"
+	"github.com/foomo/webgrapple/pkg/server"
+	"github.com/foomo/webgrapple/pkg/utils/freeport"
+	"github.com/foomo/webgrapple/pkg/vo"
 )
 
 func getConfig(

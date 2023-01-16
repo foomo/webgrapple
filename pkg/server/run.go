@@ -157,7 +157,7 @@ func checkHosts(logger *zap.Logger, hostList []hostName) (hostAdresses map[hostN
 	return hostAdresses
 }
 
-func run(logger *zap.Logger, serviceAddress, backendURLString string, urlStrings []string, certFile, keyFile string) error {
+func Run(logger *zap.Logger, serviceAddress, backendURLString string, urlStrings []string, certFile, keyFile string) error {
 
 	hosts, urls, errExtractHosts := extractDataFromURLStrings(urlStrings)
 	if errExtractHosts != nil {

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"io/ioutil"
 
-	"github.com/foomo/webgrapple/vo"
+	"github.com/foomo/webgrapple/pkg/vo"
 	"gopkg.in/yaml.v3"
 )
 

@@ -9,7 +9,7 @@ import (
 	time "time"
 
 	gotsrpc "github.com/foomo/gotsrpc"
-	github_com_foomo_webgrapple_vo "github.com/foomo/webgrapple/vo"
+	github_com_foomo_webgrapple_vo "github.com/foomo/webgrapple/pkg/vo"
 )
 
 type ServiceGoTSRPCProxy struct {

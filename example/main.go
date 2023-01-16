@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/foomo/webgrapple"
-	"github.com/foomo/webgrapple/server"
-	"github.com/foomo/webgrapple/utils"
+	"github.com/foomo/webgrapple/cmd/webgrapple"
+	"github.com/foomo/webgrapple/pkg/server"
+	"github.com/foomo/webgrapple/pkg/utils"
 	"go.uber.org/zap"
 )
 

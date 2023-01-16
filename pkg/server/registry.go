@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/url"
 
-	"github.com/foomo/webgrapple/vo"
+	"github.com/foomo/webgrapple/pkg/vo"
 	"go.uber.org/zap"
 )
 

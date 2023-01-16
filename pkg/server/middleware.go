@@ -4,7 +4,7 @@ import (
 	http "net/http"
 	"net/url"
 
-	"github.com/foomo/webgrapple/vo"
+	"github.com/foomo/webgrapple/pkg/vo"
 )
 
 // ServiceMap a map of registered services

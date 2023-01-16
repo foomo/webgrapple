@@ -6,7 +6,7 @@ import (
 	net_http "net/http"
 
 	gotsrpc "github.com/foomo/gotsrpc"
-	github_com_foomo_webgrapple_vo "github.com/foomo/webgrapple/vo"
+	github_com_foomo_webgrapple_vo "github.com/foomo/webgrapple/pkg/vo"
 )
 
 type ServiceGoTSRPCClient interface {
