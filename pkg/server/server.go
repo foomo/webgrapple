@@ -5,10 +5,9 @@ import (
 	"net/http/httputil"
 	"net/url"
 
-	"go.uber.org/zap"
+	"github.com/foomo/webgrapple/pkg/log"
 )
 
-const DefaultServiceAddress = "127.0.0.1:8888"
 const DefaultServiceURL = "http://127.0.0.1:8888"
 const DefaultEndPoint = "/___webgrapple-service"
 
@@ -18,9 +17,9 @@ type srvr struct {
 	defaultProxyHandler http.HandlerFunc
 }
 
-func newServer(backendURL *url.URL, logger *zap.Logger) (*srvr, error) {
+func newServer(backendURL *url.URL, l log.Logger, middlewareFactory WebGrappleMiddleWareCreator) (*srvr, error) {
 	defaultProxy := httputil.NewSingleHostReverseProxy(backendURL)
-	r := newRegistry(logger, backendURL)
+	r := newRegistry(l, backendURL, middlewareFactory)
 	service := &Service{
 		r: r,
 	}

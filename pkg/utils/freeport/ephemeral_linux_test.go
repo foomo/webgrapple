@@ -1,4 +1,5 @@
-//+build darwin
+//go:build linux
+// +build linux
 
 package freeport
 

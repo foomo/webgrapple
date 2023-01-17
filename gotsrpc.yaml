@@ -3,7 +3,7 @@ targets:
   service:
     services:
       /___webgrapple-service: Service
-    package: github.com/foomo/webgrapple/server
+    package: github.com/foomo/webgrapple/pkg/server
     tsrpc:
       - Service
 ...

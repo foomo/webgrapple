@@ -1,4 +1,5 @@
-//+build freebsd
+//go:build darwin
+// +build darwin
 
 package freeport
 

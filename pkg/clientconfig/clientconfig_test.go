@@ -3,7 +3,7 @@ package clientconfig
 import (
 	"testing"
 
-	"github.com/foomo/webgrapple/vo"
+	"github.com/foomo/webgrapple/pkg/vo"
 	"github.com/stretchr/testify/assert"
 )
 
