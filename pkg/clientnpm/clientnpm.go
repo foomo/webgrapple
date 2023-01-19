@@ -21,12 +21,11 @@ import (
 
 func getConfig(
 	l log.Logger,
-	path string,
+	workDir string,
 	configPath string,
 ) (config vo.ClientConfig, err error) {
-
 	if configPath == "" {
-		configPath = filepath.Join(path, "webgrapple.yaml")
+		configPath = filepath.Join(workDir, "webgrapple.yaml")
 	}
 
 	l.Info(fmt.Sprintf("checking for configuration at path %q", configPath))
@@ -58,14 +57,13 @@ func Run(
 	flagDebugServerPort int,
 	flagStartVSCode bool,
 	flagConfigPath string,
-	path string,
+	workDir string,
 	npmCmd string, npmArgs ...string,
 ) error {
-
 	// setup vars
-	name := filepath.Base(path)
-	l.Info(fmt.Sprintf("starting devproxy client for path %q and name %q", path, name))
-	config, errGetConfig := getConfig(l, path, flagConfigPath)
+	name := filepath.Base(workDir)
+	l.Info(fmt.Sprintf("starting devproxy client for path %q", flagConfigPath, name))
+	config, errGetConfig := getConfig(l, workDir, flagConfigPath)
 	if errGetConfig != nil {
 		return errorWrap(errGetConfig, "failed to get config webgrapple.yaml is missing ?!")
 	}
@@ -91,7 +89,7 @@ func Run(
 		debugPort = flagDebugServerPort
 	}
 	if flagStartVSCode {
-		vscodedebug(l, path, name, debugPort)
+		vscodedebug(l, workDir, name, debugPort)
 	}
 
 	// ports have to be set in env
@@ -115,12 +113,13 @@ func Run(
 	l.Info("time to register the config with the reverse proxy server(s)")
 	errAddServices := addServices(flagReverseProxyAddress, config, port)
 	if errAddServices != nil {
-		return errorWrap(errAddServices, "could not upsert services to proxy")
+		return fmt.Errorf("could not start the app, is the proxy running at %s?", flagReverseProxyAddress)
 	}
 	defer removeServices(l, flagReverseProxyAddress, config)
 
 	// prepare npm command
 	cmd := exec.Command(npmCmd, npmArgs...)
+	cmd.Dir = workDir
 	cmd.Env = append(os.Environ(), additionalEnvVars...)
 	stdOutPipe, errStdOut := cmd.StdoutPipe()
 	if errStdOut != nil {
