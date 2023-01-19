@@ -5,14 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
+	"github.com/foomo/webgrapple/pkg/httputils"
 	"github.com/foomo/webgrapple/pkg/log"
+	"golang.org/x/sync/errgroup"
 )
 
 type hostName string
@@ -138,7 +139,6 @@ func ensureCertAndKey(
 		l.Info("using existing cert and key")
 	}
 	return certFile, keyFile, nil
-
 }
 
 func checkHosts(l log.Logger, hostList []hostName) (hostAdresses map[hostName]string) {
@@ -146,9 +146,9 @@ func checkHosts(l log.Logger, hostList []hostName) (hostAdresses map[hostName]st
 	for _, host := range hostList {
 		addresses, errLookup := net.LookupHost(string(host))
 		if errLookup != nil {
-			l.Error("could not look up host %q, did you miss to add a hosts entry, or DNS is not available? %v", host, errLookup)
+			l.Error(fmt.Sprintf("could not look up host %q, did you miss to add a hosts entry, or DNS is not available? %v", host, errLookup))
 		} else {
-			l.Info("checking host %q for addres %q", string(host), addresses)
+			l.Info(fmt.Sprintf("checking host %q for addres %q", string(host), addresses))
 		}
 		if len(addresses) == 0 {
 			l.Info("not addresses found, falling back to 127.0.0.1")
@@ -167,7 +167,6 @@ func Run(
 	certFile, keyFile string,
 	middlewareFactory WebGrappleMiddleWareCreator,
 ) error {
-
 	hosts, urls, errExtractHosts := extractDataFromURLStrings(urlStrings)
 	if errExtractHosts != nil {
 		return errExtractHosts
@@ -190,9 +189,8 @@ func Run(
 		return errServer
 	}
 
-	chanErr := make(chan error)
-
 	usedAddressPorts := map[string]int{}
+	g, gctx := errgroup.WithContext(ctx)
 
 	for _, u := range urls {
 		hostParts := strings.Split(u.Host, ":")
@@ -218,22 +216,27 @@ func Run(
 		}
 		usedAddressPorts[addressPort]++
 
+		listenAddress := u.Host + port
+
 		if usedAddressPorts[addressPort] == 1 {
-			go func(u *url.URL, useTLS bool, port string) {
+			g.Go(func() error {
+				httpServer := httputils.GracefulHttpServer(gctx, l, listenAddress, s)
 				l.Info(fmt.Sprintf("starting server on %s", addressPort))
 				if useTLS {
-					chanErr <- http.ListenAndServeTLS(u.Host+port, certFile, keyFile, s)
-				} else {
-					chanErr <- http.ListenAndServe(u.Host+port, s)
+					return httpServer.ListenAndServeTLS(certFile, keyFile)
 				}
-			}(u, useTLS, port)
+				return httpServer.ListenAndServe()
+			})
 		} else {
 			l.Info(fmt.Sprintf("not starting server - address %q already bound", addressPort))
 		}
 	}
-	go func() {
+
+	g.Go(func() error {
 		l.Info(fmt.Sprintf("starting dev client service on %q", serviceAddress))
-		chanErr <- http.ListenAndServe(serviceAddress, s.serviceHandler)
-	}()
-	return <-chanErr
+		httpDevClient := httputils.GracefulHttpServer(gctx, l, serviceAddress, s.serviceHandler)
+		return httpDevClient.ListenAndServe()
+	})
+
+	return g.Wait()
 }
