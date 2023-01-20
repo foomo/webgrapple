@@ -220,7 +220,8 @@ func Run(
 
 		if usedAddressPorts[addressPort] == 1 {
 			g.Go(func() error {
-				httpServer := httputils.GracefulHttpServer(gctx, l, listenAddress, s)
+				name := fmt.Sprintf("proxy (%s)", u)
+				httpServer := httputils.GracefulHttpServer(gctx, l, name, listenAddress, s)
 				l.Info(fmt.Sprintf("starting server on %s", addressPort))
 				if useTLS {
 					return httpServer.ListenAndServeTLS(certFile, keyFile)
@@ -234,7 +235,7 @@ func Run(
 
 	g.Go(func() error {
 		l.Info(fmt.Sprintf("starting dev client service on %q", serviceAddress))
-		httpDevClient := httputils.GracefulHttpServer(gctx, l, serviceAddress, s.serviceHandler)
+		httpDevClient := httputils.GracefulHttpServer(gctx, l, "dev-client", serviceAddress, s.serviceHandler)
 		return httpDevClient.ListenAndServe()
 	})
 
