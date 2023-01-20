@@ -3,6 +3,7 @@ package httputils
 import (
 	"context"
 	"fmt"
+	syslog "log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,10 +20,24 @@ var (
 	}
 )
 
-func GracefulHttpServer(ctx context.Context, l log.Logger, address string, handler http.Handler) *http.Server {
+type serverErrorLogWriter struct {
+	name string
+	l    log.Logger
+}
+
+func (s *serverErrorLogWriter) Write(p []byte) (int, error) {
+	s.l.Error(fmt.Sprintf("%s: %s", s.name, string(p)))
+	return len(p), nil
+}
+
+func GracefulHttpServer(ctx context.Context, l log.Logger, name string, address string, handler http.Handler) *http.Server {
 	httpServer := &http.Server{
 		Addr:    address,
 		Handler: handler,
+		ErrorLog: syslog.New(&serverErrorLogWriter{
+			l:    l,
+			name: name,
+		}, "", 0),
 	}
 
 	idleConnectionsClosed := make(chan struct{})

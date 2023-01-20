@@ -1,6 +1,7 @@
 package server
 
 import (
+	"crypto/tls"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -19,6 +20,11 @@ type srvr struct {
 
 func newServer(backendURL *url.URL, l log.Logger, middlewareFactory WebGrappleMiddleWareCreator) (*srvr, error) {
 	defaultProxy := httputil.NewSingleHostReverseProxy(backendURL)
+	defaultProxy.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
 	r := newRegistry(l, backendURL, middlewareFactory)
 	service := &Service{
 		r: r,
