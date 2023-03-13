@@ -62,7 +62,7 @@ func Run(
 ) error {
 	// setup vars
 	name := filepath.Base(workDir)
-	l.Info(fmt.Sprintf("starting devproxy client for path %q", flagConfigPath, name))
+	l.Info(fmt.Sprintf("starting devproxy client for app %s with configuration %q", name, flagConfigPath))
 	config, errGetConfig := getConfig(l, workDir, flagConfigPath)
 	if errGetConfig != nil {
 		return errorWrap(errGetConfig, "failed to get config webgrapple.yaml is missing ?!")
