@@ -116,7 +116,7 @@ func ensureCertAndKey(
 		tempDir := os.TempDir()
 		certFile = filepath.Join(tempDir, "cert-"+certNameBase+".pem")
 		keyFile = filepath.Join(tempDir, "key-"+certNameBase+".pem")
-		l.Info("no key or cert given - will try temporary files")
+		l.Info(fmt.Sprintf("no key or cert given - will try temporary files at %s and %s", certFile, keyFile))
 		certAndKeyExist, errFilesExist := filesExist(certFile, keyFile)
 		if errFilesExist != nil {
 			return certFile, keyFile, errFilesExist
