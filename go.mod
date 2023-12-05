@@ -1,6 +1,6 @@
 module github.com/foomo/webgrapple
 
-go 1.19
+go 1.21
 
 require (
 	github.com/foomo/gotsrpc v1.0.4
@@ -8,6 +8,7 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.0
 	go.uber.org/zap v1.24.0
+	golang.org/x/sync v0.1.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
