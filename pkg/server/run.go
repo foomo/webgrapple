@@ -90,16 +90,17 @@ func ensureCertAndKey(
 	commonNames []hostName,
 	certFile, keyFile string,
 ) (certFileCorrected, keyFileCorrected string, err error) {
-	certExists, keyExists := false, false
+	var keyExists bool
+	var certExists bool
 
 	if certFile != "" && keyFile != "" {
-		certExists, errCertExists := fileExistsAndIsAFile("cert", certFile)
-		if errCertExists != nil {
-			return certFile, keyFile, errCertExists
+		certExists, err = fileExistsAndIsAFile("cert", certFile)
+		if err != nil {
+			return certFile, keyFile, err
 		}
-		keyExists, errKeyExists := fileExistsAndIsAFile("key", keyFile)
-		if errKeyExists != nil {
-			return certFile, keyFile, errKeyExists
+		keyExists, err = fileExistsAndIsAFile("key", keyFile)
+		if err != nil {
+			return certFile, keyFile, err
 		}
 
 		if certExists && !keyExists {
