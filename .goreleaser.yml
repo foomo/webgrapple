@@ -1,4 +1,9 @@
-# .goreleaser.yml
+builds:
+  - skip: true
+
+changelog:
+  use: github-native
+
 archives:
   - format: tar.gz
     format_overrides:
