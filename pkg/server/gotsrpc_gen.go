@@ -8,7 +8,7 @@ import (
 	http "net/http"
 	time "time"
 
-	gotsrpc "github.com/foomo/gotsrpc"
+	gotsrpc "github.com/foomo/gotsrpc/v2"
 	github_com_foomo_webgrapple_vo "github.com/foomo/webgrapple/pkg/vo"
 )
 
