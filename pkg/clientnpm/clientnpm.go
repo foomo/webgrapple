@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/foomo/webgrapple/pkg/clientconfig"
 	"github.com/foomo/webgrapple/pkg/server"
-	"github.com/foomo/webgrapple/pkg/utils/freeport"
 	"github.com/foomo/webgrapple/pkg/vo"
 )
 
@@ -71,20 +71,20 @@ func Run(
 	// get some ports
 	port := flagPort
 	if port == 0 {
-		ports, errTakePort := freeport.Take(1)
+		ports, errTakePort := freeport()
 		if errTakePort != nil {
 			return errorWrap(errTakePort, "could not find a free port")
 		}
-		port = ports[0]
+		port = ports
 	}
 
 	var debugPort int
 	if flagDebugServerPort == 0 && flagStartVSCode {
-		debugPorts, errTakeDebugPort := freeport.Take(1)
+		debugPorts, errTakeDebugPort := freeport()
 		if errTakeDebugPort != nil {
 			return errorWrap(errTakeDebugPort, "could not find a free debug port")
 		}
-		debugPort = debugPorts[0]
+		debugPort = debugPorts
 	} else {
 		debugPort = flagDebugServerPort
 	}
@@ -175,6 +175,26 @@ func Run(
 
 	defer l.Info("terminating")
 	return nil
+}
+
+// freeport asks the kernel for a free open port that is ready to use.
+func freeport() (int, error) {
+	a, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		return 0, err
+	}
+
+	l, err := net.ListenTCP("tcp", a)
+	if err != nil {
+		return 0, err
+	}
+	defer l.Close()
+
+	addr, ok := l.Addr().(*net.TCPAddr)
+	if !ok {
+		return 0, errors.New("could not resolve local address")
+	}
+	return addr.Port, nil
 }
 
 func removeServices(ctx context.Context, l log.Logger, address string, config vo.ClientConfig) {
