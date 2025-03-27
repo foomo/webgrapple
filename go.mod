@@ -3,7 +3,6 @@ module github.com/foomo/webgrapple
 go 1.24.1
 
 require (
-	github.com/foomo/gotsrpc v1.0.4
 	github.com/foomo/gotsrpc/v2 v2.9.2
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.9.1
