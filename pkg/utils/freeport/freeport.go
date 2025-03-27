@@ -7,6 +7,7 @@ package freeport
 
 import (
 	"container/list"
+	"errors"
 	"fmt"
 	"math/rand"
 	"net"
@@ -50,9 +51,6 @@ var (
 	// firstPort is the first port of the allocated block.
 	firstPort int
 
-	// lockLn is the system-wide mutex for the port block.
-	lockLn net.Listener
-
 	// mu guards:
 	// - pendingPorts
 	// - freePorts
@@ -93,8 +91,7 @@ func initialize() {
 		panic("freeport: block size too big or too many blocks requested")
 	}
 
-	rand.Seed(time.Now().UnixNano())
-	firstPort, lockLn = alloc()
+	firstPort, _ = alloc()
 
 	condNotEmpty = sync.NewCond(&mu)
 	freePorts = list.New()
@@ -126,10 +123,11 @@ func checkFreedPortsOnce() {
 	pending := pendingPorts.Len()
 	remove := make([]*list.Element, 0, pending)
 	for elem := pendingPorts.Front(); elem != nil; elem = elem.Next() {
-		port := elem.Value.(int)
-		if used := isPortInUse(port); !used {
-			freePorts.PushBack(port)
-			remove = append(remove, elem)
+		if port, ok := elem.Value.(int); ok {
+			if used := isPortInUse(port); !used {
+				freePorts.PushBack(port)
+				remove = append(remove, elem)
+			}
 		}
 	}
 
@@ -164,10 +162,10 @@ func adjustMaxBlocks() (int, error) {
 	}
 
 	logf("INFO", "detected ephemeral port range of [%d, %d]", ephemeralPortMin, ephemeralPortMax)
-	for block := 0; block < maxBlocks; block++ {
-		min := lowPort + block*blockSize
-		max := min + blockSize
-		overlap := intervalOverlap(min, max-1, ephemeralPortMin, ephemeralPortMax)
+	for block := range maxBlocks {
+		minPort := lowPort + block*blockSize
+		maxPort := minPort + blockSize
+		overlap := intervalOverlap(minPort, maxPort-1, ephemeralPortMin, ephemeralPortMax)
 		if overlap {
 			logf("INFO", "reducing max blocks from %d to %d to avoid the ephemeral port range", maxBlocks, block)
 			return block, nil
@@ -181,7 +179,7 @@ func adjustMaxBlocks() (int, error) {
 // implemented as a TCP listener which is bound to the firstPort and which will
 // be automatically released when the application terminates.
 func alloc() (int, net.Listener) {
-	for i := 0; i < attempts; i++ {
+	for range attempts {
 		block := int(rand.Int31n(int32(effectiveMaxBlocks)))
 		firstPort := lowPort + block*blockSize
 		ln, err := net.ListenTCP("tcp", tcpAddr("127.0.0.1", firstPort))
@@ -195,7 +193,7 @@ func alloc() (int, net.Listener) {
 }
 
 // MustTake is the same as Take except it panics on error.
-func MustTake(n int) (ports []int) {
+func MustTake(n int) []int {
 	ports, err := Take(n)
 	if err != nil {
 		panic(err)
@@ -207,7 +205,8 @@ func MustTake(n int) (ports []int) {
 // to call this method concurrently. Ports have been tested to be available on
 // 127.0.0.1 TCP but there is no guarantee that they will remain free in the
 // future.
-func Take(n int) (ports []int, err error) {
+func Take(n int) ([]int, error) {
+	var ports []int
 	if n <= 0 {
 		return nil, fmt.Errorf("freeport: cannot take %d ports", n)
 	}
@@ -219,20 +218,23 @@ func Take(n int) (ports []int, err error) {
 	once.Do(initialize)
 
 	if n > total {
-		return nil, fmt.Errorf("freeport: block size too small")
+		return nil, errors.New("freeport: block size too small")
 	}
 
 	for len(ports) < n {
 		for freePorts.Len() == 0 {
 			if total == 0 {
-				return nil, fmt.Errorf("freeport: impossible to satisfy request; there are no actual free ports in the block anymore")
+				return nil, errors.New("freeport: impossible to satisfy request; there are no actual free ports in the block anymore")
 			}
 			condNotEmpty.Wait()
 		}
 
 		elem := freePorts.Front()
 		freePorts.Remove(elem)
-		port := elem.Value.(int)
+		port, ok := elem.Value.(int)
+		if !ok {
+			return nil, fmt.Errorf("freeport: cannot take %d ports", n)
+		}
 
 		if used := isPortInUse(port); used {
 			// Something outside of the test suite has stolen this port, possibly

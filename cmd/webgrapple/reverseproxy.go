@@ -9,7 +9,7 @@ import (
 
 const DefaultServiceAddress = "127.0.0.1:8888"
 
-var MiddlewareFactory server.WebGrappleMiddleWareCreator = nil // should be overriden
+var MiddlewareFactory server.WebGrappleMiddleWareCreator // should be overridden
 
 var (
 	flagAddresses      = []string{"https://localhost"}

@@ -78,7 +78,7 @@ func Run(
 		port = ports[0]
 	}
 
-	debugPort := 0
+	var debugPort int
 	if flagDebugServerPort == 0 && flagStartVSCode {
 		debugPorts, errTakeDebugPort := freeport.Take(1)
 		if errTakeDebugPort != nil {
@@ -89,7 +89,9 @@ func Run(
 		debugPort = flagDebugServerPort
 	}
 	if flagStartVSCode {
-		vscodedebug(l, workDir, name, debugPort)
+		if err := vscodedebug(l, workDir, name, debugPort); err != nil {
+			return err
+		}
 	}
 
 	// ports have to be set in env
@@ -145,12 +147,12 @@ func Run(
 	}()
 
 	go func() {
-		if _, err := io.Copy(os.Stdout, stdOutPipe); err != nil && err.(*os.PathError).Err != os.ErrClosed {
+		if _, err := io.Copy(os.Stdout, stdOutPipe); err != nil && !errors.Is(err, os.ErrClosed) {
 			l.Error(fmt.Sprintf("could not copy std out: %v", err))
 		}
 	}()
 	go func() {
-		if _, err := io.Copy(os.Stderr, stdErrPipe); err != nil && err.(*os.PathError).Err != os.ErrClosed {
+		if _, err := io.Copy(os.Stderr, stdErrPipe); err != nil && !errors.Is(err, os.ErrClosed) {
 			l.Error(fmt.Sprintf("could not copy std err: %v", err))
 		}
 	}()
@@ -176,8 +178,8 @@ func Run(
 }
 
 func removeServices(ctx context.Context, l log.Logger, address string, config vo.ClientConfig) {
-	client := server.NewServiceGoTSRPCClient(string(address), server.DefaultEndPoint)
-	serviceIDs := []vo.ServiceID{}
+	client := server.NewServiceGoTSRPCClient(address, server.DefaultEndPoint)
+	var serviceIDs []vo.ServiceID
 	for _, s := range config {
 		serviceIDs = append(serviceIDs, s.ID)
 	}
@@ -191,7 +193,7 @@ func removeServices(ctx context.Context, l log.Logger, address string, config vo
 }
 
 func addServices(ctx context.Context, address string, config vo.ClientConfig, port int) error {
-	client := server.NewServiceGoTSRPCClient(string(address), server.DefaultEndPoint)
+	client := server.NewServiceGoTSRPCClient(address, server.DefaultEndPoint)
 	errUpsert, errClient := client.Upsert(ctx, config)
 	if errClient != nil {
 		return errClient

@@ -64,25 +64,22 @@ func vscodedebug(logger log.Logger, path, name string, debugPort int) error {
 
 	debugConfig, errDebugConfig := vscodeDebugConfig(name, debugPort)
 	if errDebugConfig != nil {
-		return nil
+		return errDebugConfig
 	}
-
-	const tries = 5
 
 	go func() {
 		logger.Info("starting vscode")
 		launchOutput, errLaunch := exec.Command("code", vscodeTarget).CombinedOutput()
 		if errLaunch == nil {
 			launchedVSCode := false
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				_, errRunVSCodeStatus := exec.Command("code", "-s").CombinedOutput()
-				if errRunVSCodeStatus != nil {
-					logger.Info("waiting for vscode to start...")
-				} else {
+				if errRunVSCodeStatus == nil {
 					logger.Info("vscode is up")
 					launchedVSCode = true
 					break
 				}
+				logger.Info("waiting for vscode to start...")
 			}
 			if launchedVSCode {
 				logger.Info(fmt.Sprintf("launching vscode: %s", debugConfig))

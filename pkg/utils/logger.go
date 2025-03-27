@@ -23,7 +23,6 @@ func init() {
 	config.DisableStacktrace = true
 	config.DisableCaller = true
 	logger, _ = config.Build()
-	defer logger.Sync()
 }
 
 func GetLogger() *zap.Logger {

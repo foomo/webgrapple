@@ -7,18 +7,17 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"fmt"
 	"math/big"
 	"net"
 	"os"
 	"time"
 
 	"github.com/foomo/webgrapple/pkg/log"
+	"github.com/pkg/errors"
 )
 
 // derived from : https://raw.githubusercontent.com/golang/go/master/src/crypto/tls/generate_cert.go
 func selfsign(l log.Logger, hosts []string, certFile, keyFile string) error {
-
 	const timeFormat = "Jan 2 15:04:05 2006"
 	var (
 		validFrom = time.Now().Format(timeFormat)
@@ -28,7 +27,7 @@ func selfsign(l log.Logger, hosts []string, certFile, keyFile string) error {
 
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		return fmt.Errorf("Failed to generate private key: %w", err)
+		return errors.Wrap(err, "failed to generate private key")
 	}
 
 	var notBefore time.Time
@@ -37,7 +36,7 @@ func selfsign(l log.Logger, hosts []string, certFile, keyFile string) error {
 	} else {
 		notBefore, err = time.Parse(timeFormat, validFrom)
 		if err != nil {
-			return fmt.Errorf("Failed to parse creation date: %w", err)
+			return errors.Wrap(err, "failed to parse creation date")
 		}
 	}
 
@@ -46,7 +45,7 @@ func selfsign(l log.Logger, hosts []string, certFile, keyFile string) error {
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
-		return fmt.Errorf("Failed to generate serial number: %w", err)
+		return errors.Wrap(err, "failed to generate serial number")
 	}
 
 	template := x509.Certificate{
@@ -63,10 +62,10 @@ func selfsign(l log.Logger, hosts []string, certFile, keyFile string) error {
 	}
 
 	for _, h := range hosts {
-		if h == "" {
-			// maybe check for /etc/hosts
-			// log.Fatalf("Missing required --host parameter")
-		}
+		// if h == "" {
+		// maybe check for /etc/hosts
+		// log.Fatalf("Missing required --host parameter")
+		// }
 		if ip := net.ParseIP(h); ip != nil {
 			template.IPAddresses = append(template.IPAddresses, ip)
 		} else {
@@ -81,33 +80,33 @@ func selfsign(l log.Logger, hosts []string, certFile, keyFile string) error {
 
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
 	if err != nil {
-		return fmt.Errorf("Failed to create certificate: %w", err)
+		return errors.Wrap(err, "failed to create certificate")
 	}
 
 	certOut, err := os.Create(certFile)
 	if err != nil {
-		return fmt.Errorf("Failed to open cert.pem for writing: %w", err)
+		return errors.Wrap(err, "failed to open cert.pem for writing")
 	}
 	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
-		return fmt.Errorf("Failed to write data to cert.pem: %w", err)
+		return errors.Wrap(err, "failed to write data to cert.pem")
 	}
 	if err := certOut.Close(); err != nil {
-		return fmt.Errorf("Error closing cert.pem: %w", err)
+		return errors.Wrap(err, "error closing cert.pem")
 	}
 
 	keyOut, err := os.OpenFile(keyFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
-		return fmt.Errorf("Failed to open key.pem for writing: %w", err)
+		return errors.Wrap(err, "failed to open key.pem for writing")
 	}
 	privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
 	if err != nil {
-		return fmt.Errorf("Unable to marshal private key: %w", err)
+		return errors.Wrap(err, "unable to marshal private key")
 	}
 	if err := pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes}); err != nil {
-		return fmt.Errorf("Failed to write data to key.pem: %w", err)
+		return errors.Wrap(err, "failed to write data to key.pem")
 	}
 	if err := keyOut.Close(); err != nil {
-		return fmt.Errorf("Error closing key.pem: %w", err)
+		return errors.Wrap(err, "error closing key.pem")
 	}
 	l.Info("made certs")
 	return nil

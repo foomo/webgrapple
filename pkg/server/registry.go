@@ -9,12 +9,12 @@ import (
 	"github.com/foomo/webgrapple/pkg/vo"
 )
 
-func (sm ServiceMap) cp() (copy ServiceMap) {
-	copy = ServiceMap{}
+func (sm ServiceMap) cp() ServiceMap {
+	c := ServiceMap{}
 	for id, s := range sm {
-		copy[id] = s
+		c[id] = s
 	}
-	return
+	return c
 }
 
 type registryState struct {
@@ -38,33 +38,33 @@ func newRegistry(l log.Logger, backendURL *url.URL, middlewareFactory WebGrapple
 }
 
 func (r *registry) getServicesCopy() ServiceMap {
-	copy := ServiceMap{}
+	c := ServiceMap{}
 	if r.state != nil && r.state.services != nil {
-		copy = r.state.services.cp()
+		c = r.state.services.cp()
 	}
-	return copy
+	return c
 }
 
 func (r *registry) upsert(services []*vo.Service) (err error) {
-	copy := r.getServicesCopy()
+	c := r.getServicesCopy()
 	for _, service := range services {
 		r.logger.Info(fmt.Sprintf("upserting service %q with backend %q", service.ID, service.Address))
-		copy[service.ID] = service
+		c[service.ID] = service
 	}
-	return r.update(copy)
+	return r.update(c)
 }
 
 func (r *registry) remove(ids []vo.ServiceID) (err error) {
-	copy := r.getServicesCopy()
+	c := r.getServicesCopy()
 	for _, id := range ids {
-		_, found := copy[id]
+		_, found := c[id]
 		if !found {
 			return errors.New("service not found")
 		}
 		r.logger.Info(fmt.Sprintf("removing service with ID %q", id))
-		delete(copy, id)
+		delete(c, id)
 	}
-	return r.update(copy)
+	return r.update(c)
 }
 
 func (r *registry) update(services ServiceMap) error {

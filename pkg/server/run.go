@@ -142,8 +142,8 @@ func ensureCertAndKey(
 	return certFile, keyFile, nil
 }
 
-func checkHosts(l log.Logger, hostList []hostName) (hostAdresses map[hostName]string) {
-	hostAdresses = map[hostName]string{}
+func checkHosts(l log.Logger, hostList []hostName) map[hostName]string {
+	hostAdresses := map[hostName]string{}
 	for _, host := range hostList {
 		addresses, errLookup := net.LookupHost(string(host))
 		if errLookup != nil {
@@ -222,7 +222,7 @@ func Run(
 		if usedAddressPorts[addressPort] == 1 {
 			g.Go(func() error {
 				name := fmt.Sprintf("proxy (%s)", u)
-				httpServer := httputils.GracefulHttpServer(gctx, l, name, listenAddress, s)
+				httpServer := httputils.GracefulHTTPServer(gctx, l, name, listenAddress, s)
 				l.Info(fmt.Sprintf("starting server on %s", addressPort))
 				if useTLS {
 					return httpServer.ListenAndServeTLS(certFile, keyFile)
@@ -236,7 +236,7 @@ func Run(
 
 	g.Go(func() error {
 		l.Info(fmt.Sprintf("starting dev client service on %q", serviceAddress))
-		httpDevClient := httputils.GracefulHttpServer(gctx, l, "dev-client", serviceAddress, s.serviceHandler)
+		httpDevClient := httputils.GracefulHTTPServer(gctx, l, "dev-client", serviceAddress, s.serviceHandler)
 		return httpDevClient.ListenAndServe()
 	})
 

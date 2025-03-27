@@ -30,7 +30,7 @@ func (s *serverErrorLogWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func GracefulHttpServer(ctx context.Context, l log.Logger, name string, address string, handler http.Handler) *http.Server {
+func GracefulHTTPServer(ctx context.Context, l log.Logger, name string, address string, handler http.Handler) *http.Server {
 	httpServer := &http.Server{
 		Addr:    address,
 		Handler: handler,
@@ -39,6 +39,7 @@ func GracefulHttpServer(ctx context.Context, l log.Logger, name string, address 
 			name: name,
 		}, "", 0),
 	}
+	cancelCtx := context.WithoutCancel(ctx)
 
 	idleConnectionsClosed := make(chan struct{})
 	go func() {
@@ -53,7 +54,8 @@ func GracefulHttpServer(ctx context.Context, l log.Logger, name string, address 
 			l.Info(fmt.Sprintf("server %q shutdown initiated due to context", address))
 		}
 
-		shutdownCtx, _ := context.WithTimeout(context.Background(), DefaultShutdownTimeout)
+		shutdownCtx, cancel := context.WithTimeout(cancelCtx, DefaultShutdownTimeout)
+		defer cancel()
 		if err := httpServer.Shutdown(shutdownCtx); err != nil {
 			l.Info(fmt.Sprintf("HTTP Server Shutdown Error: %v", err))
 		}

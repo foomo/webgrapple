@@ -1,5 +1,4 @@
 //go:build darwin
-// +build darwin
 
 package freeport
 
@@ -24,7 +23,7 @@ const (
 
 var ephPortRe = regexp.MustCompile(`^\s*(\d+)\s+(\d+)\s*$`)
 
-func getEphemeralPortRange() (int, int, error) {
+func getEphemeralPortRange() (int, int, error) { //nolint:revive
 	cmd := exec.Command(command, "-n", ephPortFirst, ephPortLast)
 	out, err := cmd.Output()
 	if err != nil {
@@ -35,11 +34,11 @@ func getEphemeralPortRange() (int, int, error) {
 
 	m := ephPortRe.FindStringSubmatch(val)
 	if m != nil {
-		min, err1 := strconv.Atoi(m[1])
-		max, err2 := strconv.Atoi(m[2])
+		minPort, err1 := strconv.Atoi(m[1])
+		maxPort, err2 := strconv.Atoi(m[2])
 
 		if err1 == nil && err2 == nil {
-			return min, max, nil
+			return minPort, maxPort, nil
 		}
 	}
 

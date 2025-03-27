@@ -5,6 +5,7 @@ import (
 
 	"github.com/foomo/webgrapple/pkg/vo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -22,11 +23,10 @@ id: my-service
 )
 
 func TestReadConfigService(t *testing.T) {
-	serviceConfigServices, errRead := readConfig(configBytesServices)
-	assert.NoError(t, errRead)
+	serviceConfigServices, errRead := readConfigBytes(configBytesServices)
+	require.NoError(t, errRead)
 	assert.Equal(t, vo.ServiceID("hello"), serviceConfigServices[1].ID)
-	serviceConfigService, errRead := readConfig(configBytesService)
-	assert.NoError(t, errRead)
+	serviceConfigService, errRead := readConfigBytes(configBytesService)
+	require.NoError(t, errRead)
 	assert.Equal(t, vo.ServiceID("my-service"), serviceConfigService[0].ID)
-	return
 }
