@@ -23,7 +23,7 @@ const (
 
 var ephPortRe = regexp.MustCompile(`^\s*(\d+)\s+(\d+)\s*$`)
 
-func getEphemeralPortRange() (int, int, error) {
+func getEphemeralPortRange() (int, int, error) { //nolint:revive
 	cmd := exec.Command(command, "-n", ephPortFirst, ephPortLast)
 	out, err := cmd.Output()
 	if err != nil {

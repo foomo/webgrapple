@@ -18,7 +18,7 @@ const ephemeralPortRangeSysctlKey = "net.ipv4.ip_local_port_range"
 
 var ephemeralPortRangePatt = regexp.MustCompile(`^\s*(\d+)\s+(\d+)\s*$`)
 
-func getEphemeralPortRange() (int, int, error) {
+func getEphemeralPortRange() (int, int, error) { //nolint:revive
 	cmd := exec.Command("sysctl", "-n", ephemeralPortRangeSysctlKey)
 	out, err := cmd.Output()
 	if err != nil {
