@@ -50,7 +50,7 @@ func errorWrap(err error, wrap string) error {
 
 // Run run the command, use this, if Command is in the way
 func Run(
-	_ context.Context,
+	ctx context.Context,
 	l log.Logger,
 	flagReverseProxyAddress string,
 	flagPort int,
@@ -111,11 +111,11 @@ func Run(
 
 	// tell the server about it
 	l.Info("time to register the config with the reverse proxy server(s)")
-	errAddServices := addServices(flagReverseProxyAddress, config, port)
+	errAddServices := addServices(ctx, flagReverseProxyAddress, config, port)
 	if errAddServices != nil {
 		return fmt.Errorf("could not start the app, is the proxy running at %s?", flagReverseProxyAddress)
 	}
-	defer removeServices(l, flagReverseProxyAddress, config)
+	defer removeServices(ctx, l, flagReverseProxyAddress, config)
 
 	// prepare npm command
 	cmd := exec.Command(npmCmd, npmArgs...)
@@ -175,13 +175,13 @@ func Run(
 	return nil
 }
 
-func removeServices(l log.Logger, address string, config vo.ClientConfig) {
+func removeServices(ctx context.Context, l log.Logger, address string, config vo.ClientConfig) {
 	client := server.NewServiceGoTSRPCClient(string(address), server.DefaultEndPoint)
 	serviceIDs := []vo.ServiceID{}
 	for _, s := range config {
 		serviceIDs = append(serviceIDs, s.ID)
 	}
-	errRemove, errClient := client.Remove(serviceIDs)
+	errRemove, errClient := client.Remove(ctx, serviceIDs)
 	if errClient != nil {
 		l.Error(fmt.Sprintf("could not remove services, got a client error: %v", errClient))
 	}
@@ -190,9 +190,9 @@ func removeServices(l log.Logger, address string, config vo.ClientConfig) {
 	}
 }
 
-func addServices(address string, config vo.ClientConfig, port int) error {
+func addServices(ctx context.Context, address string, config vo.ClientConfig, port int) error {
 	client := server.NewServiceGoTSRPCClient(string(address), server.DefaultEndPoint)
-	errUpsert, errClient := client.Upsert(config)
+	errUpsert, errClient := client.Upsert(ctx, config)
 	if errClient != nil {
 		return errClient
 	}
