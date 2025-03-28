@@ -1,7 +1,7 @@
 package server
 
 import (
-	http "net/http"
+	"net/http"
 	"net/url"
 
 	"github.com/foomo/webgrapple/pkg/vo"

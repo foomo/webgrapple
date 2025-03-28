@@ -5,9 +5,9 @@ type ServiceID string
 
 // Service a service to proxy to
 type Service struct {
-	ID      ServiceID
-	Address string
-	Custom  map[string]interface{}
+	ID      ServiceID              `yaml:"id"`
+	Address string                 `yaml:"address"`
+	Custom  map[string]interface{} `yaml:"custom"`
 }
 
 // ServiceError an error used in client server communication

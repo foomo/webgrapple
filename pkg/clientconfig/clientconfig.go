@@ -13,11 +13,10 @@ func ReadConfig(file string) (multiServerConfig vo.ClientConfig, err error) {
 	if errRead != nil {
 		return nil, errRead
 	}
-	return readConfig(configBytes)
+	return readConfigBytes(configBytes)
 }
 
-func readConfig(configBytes []byte) (multiServerConfig vo.ClientConfig, err error) {
-
+func readConfigBytes(configBytes []byte) (vo.ClientConfig, error) {
 	// a list of services
 	clientConfig := vo.ClientConfig{}
 	if yaml.Unmarshal(configBytes, &clientConfig) == nil {
@@ -25,7 +24,7 @@ func readConfig(configBytes []byte) (multiServerConfig vo.ClientConfig, err erro
 	}
 
 	// just one service
-	service := &vo.Service{}
+	var service *vo.Service
 	if yaml.Unmarshal(configBytes, &service) == nil {
 		return vo.ClientConfig{
 			service,

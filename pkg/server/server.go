@@ -29,7 +29,7 @@ func newServer(backendURL *url.URL, l log.Logger, middlewareFactory WebGrappleMi
 	service := &Service{
 		r: r,
 	}
-	serviceHandler := NewDefaultServiceGoTSRPCProxy(*service, []string{})
+	serviceHandler := NewDefaultServiceGoTSRPCProxy(service)
 	return &srvr{
 		r:                   r,
 		serviceHandler:      serviceHandler,

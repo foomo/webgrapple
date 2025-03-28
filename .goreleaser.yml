@@ -1,5 +1,10 @@
+version: 2
+
 builds:
   - skip: true
+
+release:
+  prerelease: auto
 
 changelog:
   use: github-native

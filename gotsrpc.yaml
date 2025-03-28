@@ -1,4 +1,7 @@
----
+module:
+  name: github.com/foomo/webgrapple
+  path: .
+
 targets:
   service:
     services:
@@ -6,4 +9,3 @@ targets:
     package: github.com/foomo/webgrapple/pkg/server
     tsrpc:
       - Service
-...

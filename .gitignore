@@ -1,18 +1,28 @@
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
-
-# Test binary, built with `go test -c`
-*.test
-
-# Output of the go coverage tool, specifically when used with LiteIDE
+.*
+*.zip
+*.tar
 *.out
+*.log
+/bin/
+/tmp/
 
-# Dependency directories (remove the comment below to include it)
-vendor/
+## Git
+!.gitkeep
+!.gitignore
 
-.idea
+## GitHub
+!.github/
+
+## Editorconfig
+!.editorconfig
+
+## Husky
+!.husky/
+!.husky.yaml
+
+## Ownbrew
+!.ownbrew.yaml
+
+## Golang
+!.golangci.yml
+!.goreleaser.yml
