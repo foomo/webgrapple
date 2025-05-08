@@ -2,6 +2,7 @@ package httputils
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	syslog "log"
 	"net/http"
@@ -34,6 +35,9 @@ func GracefulHTTPServer(ctx context.Context, l log.Logger, name string, address 
 	httpServer := &http.Server{
 		Addr:    address,
 		Handler: handler,
+		TLSConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
 		ErrorLog: syslog.New(&serverErrorLogWriter{
 			l:    l,
 			name: name,
